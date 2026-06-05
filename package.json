@@ -1,7 +1,7 @@
 {
   "name": "@daliusd/taskey",
   "version": "0.1.0",
-  "description": "JSON-first task management CLI for AI agents",
+  "description": "Human-friendly task management CLI with explicit JSON mode for AI agents", 
   "type": "module",
   "bin": {
     "taskey": "dist/cli.js"
