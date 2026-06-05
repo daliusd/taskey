@@ -13,7 +13,7 @@
     "dist",
     "README.md",
     "CLI_CONTRACT.md",
-    "skills"
+    "skills/*/SKILL.md"
   ],
   "scripts": {
     "build": "tsc",
