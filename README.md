@@ -10,6 +10,12 @@ taskey '{"action":"list"}'
 echo '{"action":"next"}' | taskey
 ```
 
+Install the agent skill with `npx skills`:
+
+```sh
+npx skills add https://github.com/daliusd/taskey --skill taskey
+```
+
 `taskey --help` and `taskey --version` are the only human-oriented modes. Normal output is compact JSON.
 
 ## Request format

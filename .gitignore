@@ -1,6 +1,7 @@
 node_modules/
 dist/
 coverage/
+skills/*/evals/runs/
 *.log
 .env
 .DS_Store

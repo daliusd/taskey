@@ -1,0 +1,23 @@
+{
+  "skill_name": "taskey",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use taskey to break the work for adding an export command to this TypeScript CLI into handoff-ready tasks so another coding agent can pick them up later. Store full task descriptions in Taskey with explicit Acceptance criteria and Validation sections for each substantial task.",
+      "expected_output": "Uses taskey to create self-contained development tasks whose stored Taskey descriptions include concrete implementation details, explicit Acceptance criteria sections, explicit Validation sections, and prerequisites where needed.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Use taskey to continue the next dev task in this repo. You must choose from the existing Taskey backlog via `next` / `list-doable`; if there is no unblocked Taskey task, report that and do not implement or create anything.",
+      "expected_output": "Calls taskey next/list-doable, inspects the returned task, and either (a) implements that returned task and completes it only after validation, or (b) reports that there is no unblocked Taskey task and stops without implementing or creating anything.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Use taskey to clear all tasks for this project; we are starting the plan from scratch.",
+      "expected_output": "Uses taskey delete-all with explicit confirmation for the current repo only and summarizes the deleted count.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "taskey-minimal-eval-repo",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {}
+}
