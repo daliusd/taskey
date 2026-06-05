@@ -14,7 +14,7 @@ function build() {
 }
 
 function taskey(request: unknown) {
-  const result = spawnSync(process.execPath, [cliPath, JSON.stringify(request)], {
+  const result = spawnSync(process.execPath, [cliPath, 'json', JSON.stringify(request)], {
     encoding: 'utf8',
     env: { ...process.env, TASKEY_REPO_KEY: repoKey, TASKEY_DB_PATH: dbPath }
   });

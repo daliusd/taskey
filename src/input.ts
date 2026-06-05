@@ -14,10 +14,7 @@ const requestEnvelopeSchema = z
 
 export type RequestEnvelope = z.infer<typeof requestEnvelopeSchema>;
 
-export function readRequest(argv: string[], stdinText = readStdin()): RequestEnvelope | 'help' | 'version' {
-  if (argv.length === 1 && argv[0] === '--help') return 'help';
-  if (argv.length === 1 && argv[0] === '--version') return 'version';
-
+export function readJsonRequest(argv: string[], stdinText = readStdin()): RequestEnvelope {
   if (argv.length > 1) {
     throw new TaskeyError('INVALID_ARGUMENTS', 'Expected exactly one JSON argument or stdin.');
   }

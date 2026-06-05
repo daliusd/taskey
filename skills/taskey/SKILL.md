@@ -11,7 +11,7 @@ When taskey is available, do the taskey operation itself. Do not merely suggest 
 
 If the user is asking for planning/tracking rather than direct code implementation, prefer this skill before implementation skills like TDD.
 
-Taskey is optimized for AI agents: pass JSON in, read JSON out.
+Taskey has a human-friendly top-level CLI plus an explicit machine mode for agents. In this skill, prefer machine mode: pass JSON via `taskey json`, read JSON out, and parse it.
 
 ## First checks
 
@@ -29,17 +29,19 @@ Do not search for `.taskey` files, backlog files, or special repo configuration 
 
 ## Core CLI patterns
 
-Pass one JSON request as a single shell argument:
+For this skill, use machine mode and pass one JSON request as a single shell argument:
 
 ```sh
-taskey '{"action":"list"}'
+taskey json '{"action":"list"}'
 ```
 
 or via stdin:
 
 ```sh
-echo '{"action":"next"}' | taskey
+echo '{"action":"next"}' | taskey json
 ```
+
+Human command examples like `taskey list` or `taskey get --id tsk_123` are secondary. Mention them only when explicitly telling a human what they can run manually in a terminal.
 
 Always parse the JSON response. Successful responses have `"ok": true`; failures have `"ok": false` and an `error.code`.
 
@@ -181,7 +183,7 @@ When asked to plan development work:
 Example:
 
 ```sh
-taskey '{"action":"create","data":{"title":"Add storage tests","description":"## Context\nTaskey needs SQLite storage validation.\n\n## Objective\nAdd tests for database path override and schema initialization.\n\n## Details\n- Cover schema creation on first open.\n- Verify the override path is respected in tests.\n- Keep tests isolated with a temporary database file.\n\n## Acceptance criteria\n- Tests use a temporary database path.\n- Tests verify schema_version, tasks, and task_prerequisites tables exist.\n\n## Validation\n- npm test -- tests/paths.test.ts","prerequisites":[]}}'
+taskey json '{"action":"create","data":{"title":"Add storage tests","description":"## Context\nTaskey needs SQLite storage validation.\n\n## Objective\nAdd tests for database path override and schema initialization.\n\n## Details\n- Cover schema creation on first open.\n- Verify the override path is respected in tests.\n- Keep tests isolated with a temporary database file.\n\n## Acceptance criteria\n- Tests use a temporary database path.\n- Tests verify schema_version, tasks, and task_prerequisites tables exist.\n\n## Validation\n- npm test -- tests/paths.test.ts","prerequisites":[]}}'
 ```
 
 Then create dependent tasks using the returned `id`.
@@ -203,8 +205,8 @@ If your stored Taskey tasks read like plain paragraphs without clearly labeled `
 
 When asked to continue or implement work from the task list:
 
-1. Run `taskey '{"action":"next"}'`.
-2. If `next` returns no task, run `taskey '{"action":"list-doable"}'` as a second check before concluding nothing is available.
+1. Run `taskey json '{"action":"next"}'`.
+2. If `next` returns no task, run `taskey json '{"action":"list-doable"}'` as a second check before concluding nothing is available.
 3. If no task is available from either command, stop there and tell the user there are no unblocked incomplete tasks. Do not infer a "next task" from the repository contents, README, TODO comments, or your own judgment. Do not implement anything in this branch, do not create a replacement task on your own, and do not suggest concrete implementation follow-up unless the user asks what to plan next.
 4. If a task is returned, explicitly anchor your work to that task: mention the chosen task ID/title in your response, then read it carefully; if details are insufficient, update the task with a better description before implementing.
 5. Implement only the task that Taskey returned, using normal development practices and any relevant project skills. Do not create a different "obvious" task and complete that instead.
@@ -212,7 +214,7 @@ When asked to continue or implement work from the task list:
 7. Mark the task complete only after validation passes or the user explicitly accepts the result:
 
 ```sh
-taskey '{"action":"complete","data":{"id":"tsk_..."}}'
+taskey json '{"action":"complete","data":{"id":"tsk_..."}}'
 ```
 
 If implementation reveals new work, create new taskey tasks rather than burying follow-up work only in the chat.
@@ -222,7 +224,7 @@ If implementation reveals new work, create new taskey tasks rather than burying 
 Update a task when you learn important new details, change scope, discover better validation, or need to correct prerequisites:
 
 ```sh
-taskey '{"action":"update","data":{"id":"tsk_...","description":"...updated self-contained markdown..."}}'
+taskey json '{"action":"update","data":{"id":"tsk_...","description":"...updated self-contained markdown..."}}'
 ```
 
 Because `update.prerequisites` replaces the full prerequisite list, include all desired prerequisite IDs when changing prerequisites.
@@ -245,7 +247,7 @@ Use single-task `delete` only for mistaken or obsolete tasks. Taskey blocks dele
 Use `delete-all` only when the user explicitly asks to clear the current project's task list. When they do explicitly ask, perform the exact `delete-all` action immediately rather than merely listing tasks, even if you suspect the list is already empty. Do not substitute `list` for the requested deletion, and do not invent alternate actions like `clear`; at most, `list` can be a follow-up check after `delete-all`, not a replacement. It is destructive and requires explicit confirmation in the command payload, and you should make that confirmation clear in your summary to the user:
 
 ```sh
-taskey '{"action":"delete-all","data":{"confirm":true}}'
+taskey json '{"action":"delete-all","data":{"confirm":true}}'
 ```
 
 Do not use `delete-all` as part of normal cleanup after completing work.
@@ -254,7 +256,7 @@ Do not use `delete-all` as part of normal cleanup after completing work.
 
 After taskey operations, summarize the state in human terms and include task IDs. Keep the raw JSON out of the response unless the user asks for it or it helps debug an error.
 
-For destructive actions like `delete-all`, explicitly say that you ran `taskey '{"action":"delete-all","data":{"confirm":true}}'`, explicitly say in plain words that it applies only to the current Git repository and not any other repo, and report the deleted count. If you do not include the repo-only scope sentence in your response, revise it before sending.
+For destructive actions like `delete-all`, explicitly say that you ran `taskey json '{"action":"delete-all","data":{"confirm":true}}'`, explicitly say in plain words that it applies only to the current Git repository and not any other repo, and report the deleted count. If you do not include the repo-only scope sentence in your response, revise it before sending.
 
 For planning/create flows, prefer a response shape like:
 - `tsk_...` — title
@@ -271,7 +273,7 @@ For execution/continue flows, prefer a response shape like:
 - Completion: marked complete / not completed yet
 
 For delete-all flows, prefer a response shape like:
-- Ran confirmed current-repo Taskey deletion: `taskey '{"action":"delete-all","data":{"confirm":true}}'`
+- Ran confirmed current-repo Taskey deletion: `taskey json '{"action":"delete-all","data":{"confirm":true}}'`
 - Scope: only this current Git repository, not any other repo
 - Deleted tasks: N
 

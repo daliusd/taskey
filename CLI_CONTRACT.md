@@ -1,24 +1,58 @@
 # Taskey CLI Contract
 
-`taskey` is a machine-first CLI. Normal input and output are JSON.
+`taskey` is a human-first CLI with an explicit machine JSON mode.
 
-## Input
+## Human mode
+
+Top-level commands are human-friendly:
+
+```sh
+taskey list
+taskey get --id tsk_123
+taskey delete-all
+taskey --help
+```
+
+Command set:
+
+```text
+list [--all]
+list-doable
+next
+get --id <task-id>
+create --title <title> [--description <text>] [--prerequisite <task-id> ...]
+update --id <task-id> [--title <title>] [--description <text>] [--prerequisite <task-id> ...] [--clear-prerequisites]
+complete --id <task-id>
+reopen --id <task-id>
+delete --id <task-id>
+delete-all
+json
+```
+
+Human output is plain text on stdout. Human errors are plain text on stderr with non-zero exit status.
+
+Behavior notes:
+
+- `taskey` with no args is the same as `taskey --help`.
+- `taskey list` shows incomplete tasks only.
+- `taskey list --all` orders tasks as open, blocked, then done.
+- `taskey next` prints a friendly message and exits `0` when no unblocked task exists.
+- `taskey delete-all` runs immediately with no extra `--yes` flag.
+
+## Machine JSON mode
+
+Run machine mode through the `json` subcommand.
+
+```sh
+taskey json '{"action":"list"}'
+echo '{"action":"list"}' | taskey json
+```
 
 Pass exactly one JSON request either as one positional argument or via stdin.
 
-```sh
-taskey '{"action":"list"}'
-echo '{"action":"list"}' | taskey
-```
+Providing both argument JSON and stdin JSON is an `AMBIGUOUS_INPUT` error. Providing no JSON is `MISSING_INPUT`. More than one positional JSON argument is `INVALID_ARGUMENTS`.
 
-Providing both argument JSON and stdin JSON is an `AMBIGUOUS_INPUT` error. Providing no JSON is `MISSING_INPUT`. More than one positional argument is `INVALID_ARGUMENTS`.
-
-Special human commands:
-
-```sh
-taskey --help
-taskey --version
-```
+On an interactive TTY, `taskey json` with no JSON input may show a short usage message instead of a JSON error.
 
 ## Request envelope
 
@@ -36,7 +70,7 @@ taskey --version
 - `fields` may contain `title`, `description`, `prerequisites`, and `completed`; `id` is always returned.
 - Unknown fields are rejected.
 
-## Actions
+## Machine actions
 
 - `create`: `data.title` required; `data.description` optional; `data.prerequisites` optional.
 - `get`: `data.id` required.
@@ -49,7 +83,7 @@ taskey --version
 - `delete`: `data.id` required; `fields` rejected.
 - `delete-all`: `data.confirm` must be `true`; deletes all tasks for the current Git repository; `fields` rejected.
 
-## Output
+## Machine output
 
 Success examples:
 
@@ -66,7 +100,7 @@ Error example:
 {"ok":false,"error":{"code":"INVALID_JSON","message":"Input must be valid JSON."}}
 ```
 
-JSON errors are printed to stdout with non-zero exit code. Stderr is empty by default.
+Machine JSON errors are printed to stdout with non-zero exit code. Stderr is empty by default.
 
 ## Git scoping
 

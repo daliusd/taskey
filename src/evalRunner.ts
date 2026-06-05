@@ -190,7 +190,9 @@ export function buildJudgePrompt(input: {
 Taskey command evidence:
 ${truncateForPrompt(input.taskeyCommands.map((command) => `- ${command}`).join('\n'), 2_000)}`;
   const taskeyStateSection =
-    input.taskeyState === undefined ? '' : `
+    input.taskeyState === undefined
+      ? ''
+      : `
 
 Taskey state after run:
 ${truncateForPrompt(input.taskeyState, 8_000)}`;
@@ -432,9 +434,7 @@ function extractTaskeyCommandsFromPiEvents(jsonl: string): string[] {
 
     try {
       collectTaskeyCommandsFromEvent(JSON.parse(line), commands);
-    } catch {
-      continue;
-    }
+    } catch {}
   }
 
   return [...new Set(commands)];

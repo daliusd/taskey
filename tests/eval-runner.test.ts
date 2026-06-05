@@ -252,7 +252,7 @@ describe('skill eval runner parsing', () => {
                     {
                       type: 'toolCall',
                       name: 'bash',
-                      arguments: { command: "taskey '{\"action\":\"create\"}'" }
+                      arguments: { command: 'taskey \'{"action":"create"}\'' }
                     }
                   ]
                 }
@@ -412,7 +412,7 @@ describe('skill eval runner parsing', () => {
                 {
                   type: 'toolCall',
                   name: 'bash',
-                  arguments: { command: "taskey '{\"action\":\"del" }
+                  arguments: { command: 'taskey \'{"action":"del' }
                 }
               ]
             }
@@ -426,7 +426,7 @@ describe('skill eval runner parsing', () => {
               {
                 type: 'toolCall',
                 name: 'bash',
-                arguments: { command: "taskey '{\"action\":\"delete-all\",\"data\":{\"confirm\":true}}'" }
+                arguments: { command: 'taskey \'{"action":"delete-all","data":{"confirm":true}}\'' }
               }
             ]
           }
@@ -446,7 +446,8 @@ describe('skill eval runner parsing', () => {
       {
         id: '3',
         prompt: 'Use taskey to clear all tasks for this project; we are starting the plan from scratch.',
-        expectedOutput: 'Uses taskey delete-all with explicit confirmation for the current repo only and summarizes the deleted count.',
+        expectedOutput:
+          'Uses taskey delete-all with explicit confirmation for the current repo only and summarizes the deleted count.',
         files: []
       },
       {
@@ -461,7 +462,7 @@ describe('skill eval runner parsing', () => {
       }
     );
 
-    expect(result.judgePrompt).toContain("taskey '{\"action\":\"delete-all\",\"data\":{\"confirm\":true}}'");
+    expect(result.judgePrompt).toContain('taskey \'{"action":"delete-all","data":{"confirm":true}}\'');
     expect(result.judgePrompt).not.toContain('message_update');
     expect(result.judgePrompt).not.toContain('assistantMessageEvent');
   });
