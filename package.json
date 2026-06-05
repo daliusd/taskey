@@ -12,7 +12,8 @@
   "files": [
     "dist",
     "README.md",
-    "CLI_CONTRACT.md"
+    "CLI_CONTRACT.md",
+    "skills"
   ],
   "scripts": {
     "build": "tsc",
