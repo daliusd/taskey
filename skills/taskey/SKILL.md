@@ -1,6 +1,7 @@
 ---
 name: taskey
-description: Use this skill whenever the user wants repository development work managed as persistent tasks: “break this work into tasks”, “make a plan/backlog/checklist”, “create handoff tasks for another coding agent”, “continue the next dev task”, “what’s the next unblocked task?”, “update/complete/reopen a task”, or “clear all tasks / start from scratch”. Use it even if the user does not mention taskey and even if implementation skills are also relevant, because the immediate job is task management. This skill uses the taskey JSON CLI to create, list, continue, update, complete, and delete repo-scoped dev tasks, with each task written so another developer or AI agent can implement it later without hidden chat context.
+description: >-
+  Use this skill whenever the user wants repository development work managed as persistent tasks: “break this work into tasks”, “make a plan/backlog/checklist”, “create handoff tasks for another coding agent”, “continue the next dev task”, “what’s the next unblocked task?”, “update/complete/reopen a task”, or “clear all tasks / start from scratch”. Use it even if the user does not mention taskey and even if implementation skills are also relevant, because the immediate job is task management. This skill uses the taskey JSON CLI to create, list, continue, update, complete, and delete repo-scoped dev tasks, with each task written so another developer or AI agent can implement it later without hidden chat context.
 ---
 
 # Taskey Dev Task Management
