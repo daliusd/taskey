@@ -146,6 +146,24 @@ describe('CLI contract', () => {
     expect(got.stdout).toContain('Description:\nLine 1\nLine 2');
   });
 
+  test('human next shows full task details for the next task', () => {
+    const created = runTaskey(['create', '--title', 'First task', '--description', 'Line 1\nLine 2']);
+
+    expect(created.status).toBe(0);
+    const id = created.stdout.match(/(tsk_[a-z0-9]+)/)?.[1];
+    expect(id).toBeTruthy();
+
+    const next = runTaskey(['next']);
+
+    expect(next.status).toBe(0);
+    expect(next.stderr).toBe('');
+    expect(next.stdout).toContain(`ID: ${id}`);
+    expect(next.stdout).toContain('Title: First task');
+    expect(next.stdout).toContain('Status: open');
+    expect(next.stdout).toContain('Prerequisites: none');
+    expect(next.stdout).toContain('Description:\nLine 1\nLine 2');
+  });
+
   test('human list --all shows open, blocked, and done in human order', () => {
     const open = runTaskey(['create', '--title', 'Open']);
     const openId = open.stdout.match(/(tsk_[a-z0-9]+)/)?.[1] ?? '';

@@ -50,6 +50,7 @@ Notes:
 - `taskey` and `taskey --help` show human help.
 - `taskey list` shows incomplete tasks only.
 - `taskey list --all` shows open tasks first, then blocked tasks, then completed tasks.
+- `taskey next` shows the next unblocked task with the same full details as `taskey get`.
 - `taskey delete-all` deletes all tasks for the current Git repo immediately.
 
 ## Machine JSON mode

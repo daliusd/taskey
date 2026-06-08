@@ -36,6 +36,7 @@ Behavior notes:
 - `taskey` with no args is the same as `taskey --help`.
 - `taskey list` shows incomplete tasks only.
 - `taskey list --all` orders tasks as open, blocked, then done.
+- `taskey next` shows the next unblocked task using the same full-detail human view as `taskey get`.
 - `taskey next` prints a friendly message and exits `0` when no unblocked task exists.
 - `taskey delete-all` runs immediately with no extra `--yes` flag.
 

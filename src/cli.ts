@@ -322,7 +322,7 @@ function formatHumanResponse(command: HumanCommand, response: Record<string, unk
     case 'next': {
       const task = (response.task as PublicTask | null | undefined) ?? null;
       if (!task) return 'No unblocked incomplete tasks.\n';
-      return `${formatTaskLine(task, service)}\n`;
+      return formatTaskDetails(task, service);
     }
     case 'get': {
       const task = response.task as PublicTask;
