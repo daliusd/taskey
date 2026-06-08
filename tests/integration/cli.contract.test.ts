@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest';
 
 const cliPath = new URL('../../dist/cli.js', import.meta.url).pathname;
-const packageVersion = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version as string;
+const packageVersion = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'))
+  .version as string;
 const env = { ...process.env, TASKEY_REPO_KEY: '/tmp/taskey-test-repo', TASKEY_DB_PATH: '/tmp/taskey-test.sqlite' };
 
 function build() {
