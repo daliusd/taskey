@@ -436,7 +436,7 @@ function readPackageVersion(): string {
     };
     return packageJson.version ?? '0.0.0';
   } catch {
-    return '0.1.0';
+    return '0.0.0';
   }
 }
 

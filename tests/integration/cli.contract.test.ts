@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest';
 
 const cliPath = new URL('../../dist/cli.js', import.meta.url).pathname;
+const packageVersion = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version as string;
 const env = { ...process.env, TASKEY_REPO_KEY: '/tmp/taskey-test-repo', TASKEY_DB_PATH: '/tmp/taskey-test.sqlite' };
 
 function build() {
@@ -42,7 +43,7 @@ describe('CLI contract', () => {
 
       expect(result.status).toBe(0);
       expect(result.stderr).toBe('');
-      expect(result.stdout).toBe('0.1.0\n');
+      expect(result.stdout).toBe(`${packageVersion}\n`);
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
