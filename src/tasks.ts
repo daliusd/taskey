@@ -11,9 +11,13 @@ export type PublicTask = {
   completed: boolean;
 };
 
+export type StashInfo = { name: string; taskCount: number };
+
 type TaskRow = { id: string; title: string; description: string; completed: 0 | 1; created_at: number };
 
 const idPattern = /^tsk_[a-z0-9]+$/;
+const stashNamePattern = /^[A-Za-z0-9 _.-]+$/;
+const stashRepoKeyPrefix = 'taskey-stash-v1:';
 
 export class TaskService {
   constructor(
@@ -155,6 +159,67 @@ export class TaskService {
     return { deleted };
   }
 
+  listStashes(): StashInfo[] {
+    const prefix = stashRepoKeyPrefixFor(this.repoKey);
+    const rows = this.db
+      .prepare(
+        'SELECT repo_key, COUNT(*) AS taskCount FROM tasks WHERE repo_key LIKE ? GROUP BY repo_key ORDER BY repo_key ASC'
+      )
+      .all(`${prefix}%`) as { repo_key: string; taskCount: number }[];
+    return rows.map((row) => ({ name: stashNameFromRepoKey(row.repo_key, this.repoKey), taskCount: row.taskCount }));
+  }
+
+  stash(data: unknown): StashInfo {
+    const input = object(data);
+    strict(input, ['name']);
+    const name = parseStashName(input.name);
+    const targetRepoKey = stashRepoKey(this.repoKey, name);
+    if (this.stashExists(name)) throw new TaskeyError('STASH_ALREADY_EXISTS', `Stash already exists: ${name}`);
+    const taskCount = this.countTasks(this.repoKey);
+    if (taskCount === 0) throw new TaskeyError('NO_ACTIVE_TASKS', 'No active tasks to stash.');
+
+    this.db.transaction(() => {
+      this.db.prepare('UPDATE tasks SET repo_key = ? WHERE repo_key = ?').run(targetRepoKey, this.repoKey);
+      this.db
+        .prepare('UPDATE task_prerequisites SET repo_key = ? WHERE repo_key = ?')
+        .run(targetRepoKey, this.repoKey);
+    })();
+
+    return { name, taskCount };
+  }
+
+  unstash(data: unknown): StashInfo {
+    const input = object(data);
+    strict(input, ['name']);
+    const name = parseStashName(input.name);
+    this.ensureStashExists(name);
+    const sourceRepoKey = stashRepoKey(this.repoKey, name);
+    const taskCount = this.countTasks(sourceRepoKey);
+    if (this.countTasks(this.repoKey) > 0)
+      throw new TaskeyError('ACTIVE_TASKS_EXIST', `Cannot unstash "${name}" because active tasks already exist.`);
+
+    this.db.transaction(() => {
+      this.db.prepare('UPDATE tasks SET repo_key = ? WHERE repo_key = ?').run(this.repoKey, sourceRepoKey);
+      this.db
+        .prepare('UPDATE task_prerequisites SET repo_key = ? WHERE repo_key = ?')
+        .run(this.repoKey, sourceRepoKey);
+    })();
+
+    return { name, taskCount };
+  }
+
+  listStashTasks(nameValue: unknown): PublicTask[] {
+    const name = parseStashName(nameValue);
+    this.ensureStashExists(name);
+    return this.forRepoKey(stashRepoKey(this.repoKey, name)).list();
+  }
+
+  getStashTask(idValue: unknown, nameValue: unknown): PublicTask {
+    const name = parseStashName(nameValue);
+    this.ensureStashExists(name);
+    return this.forRepoKey(stashRepoKey(this.repoKey, name)).get(idValue);
+  }
+
   private setCompleted(data: unknown, completed: boolean): PublicTask {
     const input = object(data);
     strict(input, ['id']);
@@ -186,6 +251,25 @@ export class TaskService {
 
   private ensureExists(id: string): void {
     this.getExisting(id);
+  }
+
+  private forRepoKey(repoKey: string): TaskService {
+    return new TaskService(this.db, repoKey);
+  }
+
+  private countTasks(repoKey: string): number {
+    const row = this.db.prepare('SELECT COUNT(*) AS count FROM tasks WHERE repo_key = ?').get(repoKey) as {
+      count: number;
+    };
+    return row.count;
+  }
+
+  private stashExists(name: string): boolean {
+    return this.countTasks(stashRepoKey(this.repoKey, name)) > 0;
+  }
+
+  private ensureStashExists(name: string): void {
+    if (!this.stashExists(name)) throw new TaskeyError('STASH_NOT_FOUND', `Stash not found: ${name}`);
   }
 
   private publicFromRow(row: TaskRow): PublicTask {
@@ -271,4 +355,39 @@ function parseId(value: unknown): string {
   if (typeof value !== 'string' || !idPattern.test(value))
     throw new TaskeyError('INVALID_TASK_ID', 'Task ID is malformed.');
   return value;
+}
+
+function parseStashName(value: unknown): string {
+  if (typeof value !== 'string') throw new TaskeyError('INVALID_STASH_NAME', 'data.name must be a string.');
+  const name = value.trim();
+  if (!name) throw new TaskeyError('INVALID_STASH_NAME', 'Stash name must not be empty.');
+  if (name.length > 100) throw new TaskeyError('INVALID_STASH_NAME', 'Stash name must be at most 100 characters.');
+  if (!stashNamePattern.test(name))
+    throw new TaskeyError(
+      'INVALID_STASH_NAME',
+      'Stash name may contain only letters, numbers, spaces, underscores, hyphens, and dots.'
+    );
+  return name;
+}
+
+function stashRepoKey(repoKey: string, name: string): string {
+  return `${stashRepoKeyPrefixFor(repoKey)}${base64UrlEncode(name)}`;
+}
+
+function stashRepoKeyPrefixFor(repoKey: string): string {
+  return `${stashRepoKeyPrefix}${base64UrlEncode(repoKey)}:`;
+}
+
+function stashNameFromRepoKey(repoKey: string, activeRepoKey: string): string {
+  const prefix = stashRepoKeyPrefixFor(activeRepoKey);
+  if (!repoKey.startsWith(prefix)) throw new TaskeyError('STASH_NOT_FOUND', 'Stash not found.');
+  return base64UrlDecode(repoKey.slice(prefix.length));
+}
+
+function base64UrlEncode(value: string): string {
+  return Buffer.from(value, 'utf8').toString('base64url');
+}
+
+function base64UrlDecode(value: string): string {
+  return Buffer.from(value, 'base64url').toString('utf8');
 }

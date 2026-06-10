@@ -218,4 +218,34 @@ describe('CLI contract', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toBe('Deleted 2 tasks.\n');
   });
+
+  test('human stash commands move tasks out of active scope and restore them', () => {
+    const created = runTaskey(['create', '--title', 'Stash me', '--description', 'Stored away']);
+    const id = created.stdout.match(/(tsk_[a-z0-9]+)/)?.[1] ?? '';
+
+    const stashed = runTaskey(['stash', '--name', 'drawer 1']);
+    expect(stashed.status).toBe(0);
+    expect(stashed.stderr).toBe('');
+    expect(stashed.stdout).toBe('Stashed 1 task in drawer 1.\n');
+
+    expect(runTaskey(['list']).stdout).toBe('No incomplete tasks.\n');
+    const stashes = runTaskey(['stashes']);
+    expect(stashes.status).toBe(0);
+    expect(stashes.stdout).toContain('drawer 1  1 task');
+
+    const listed = runTaskey(['list', '--stash', 'drawer 1', '--all']);
+    expect(listed.status).toBe(0);
+    expect(listed.stdout).toContain(`${id} [open] Stash me`);
+
+    const got = runTaskey(['get', '--id', id, '--stash', 'drawer 1']);
+    expect(got.status).toBe(0);
+    expect(got.stdout).toContain(`ID: ${id}`);
+    expect(got.stdout).toContain('Description:\nStored away');
+
+    const unstashed = runTaskey(['unstash', '--name', 'drawer 1']);
+    expect(unstashed.status).toBe(0);
+    expect(unstashed.stdout).toBe('Unstashed 1 task from drawer 1.\n');
+    expect(runTaskey(['stashes']).stdout).toBe('No stashes.\n');
+    expect(runTaskey(['get', '--id', id]).stdout).toContain('Title: Stash me');
+  });
 });

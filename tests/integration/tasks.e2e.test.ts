@@ -150,4 +150,75 @@ describe('task operations', () => {
       { id: other.id, title: 'Other repo task' }
     ]);
   });
+
+  test('stashes active tasks and restores them with ids, state, prerequisites, and order preserved', () => {
+    const a = okTask({ action: 'create', data: { title: 'A' } });
+    const b = okTask({ action: 'create', data: { title: 'B', prerequisites: [a.id] } });
+    taskey({ action: 'complete', data: { id: a.id } });
+
+    expect(taskey({ action: 'stash', data: { name: 'sprint 1' } }).json).toEqual({
+      ok: true,
+      stash: { name: 'sprint 1', taskCount: 2 }
+    });
+    expect(taskey({ action: 'list' }).json).toEqual({ ok: true, tasks: [] });
+    expect(taskey({ action: 'get', data: { id: a.id } }).json.error.code).toBe('TASK_NOT_FOUND');
+    expect(taskey({ action: 'stashes' }).json).toEqual({
+      ok: true,
+      stashes: [{ name: 'sprint 1', taskCount: 2 }]
+    });
+    expect(taskey({ action: 'list', data: { stash: 'sprint 1' }, fields: ['title', 'completed', 'prerequisites'] }).json).toEqual({
+      ok: true,
+      tasks: [
+        { id: a.id, title: 'A', prerequisites: [], completed: true },
+        { id: b.id, title: 'B', prerequisites: [a.id], completed: false }
+      ]
+    });
+    expect(taskey({ action: 'get', data: { id: b.id, stash: 'sprint 1' }, fields: ['title', 'prerequisites'] }).json).toEqual({
+      ok: true,
+      task: { id: b.id, title: 'B', prerequisites: [a.id] }
+    });
+
+    expect(taskey({ action: 'unstash', data: { name: 'sprint 1' } }).json).toEqual({
+      ok: true,
+      stash: { name: 'sprint 1', taskCount: 2 }
+    });
+    expect(taskey({ action: 'stashes' }).json).toEqual({ ok: true, stashes: [] });
+    expect(taskey({ action: 'list', fields: ['title', 'completed', 'prerequisites'] }).json).toEqual({
+      ok: true,
+      tasks: [
+        { id: a.id, title: 'A', prerequisites: [], completed: true },
+        { id: b.id, title: 'B', prerequisites: [a.id], completed: false }
+      ]
+    });
+  });
+
+  test('validates stash operations and keeps stashes isolated per repo', () => {
+    expect(taskey({ action: 'stash', data: { name: 'empty' } }).json.error.code).toBe('NO_ACTIVE_TASKS');
+    expect(taskey({ action: 'stash', data: { name: 'bad/name' } }).json.error.code).toBe('INVALID_STASH_NAME');
+    expect(taskey({ action: 'list', data: { stash: 'missing' } }).json.error.code).toBe('STASH_NOT_FOUND');
+    expect(taskey({ action: 'get', data: { id: 'tsk_missing', stash: 'missing' } }).json.error.code).toBe(
+      'STASH_NOT_FOUND'
+    );
+
+    okTask({ action: 'create', data: { title: 'A' } });
+    expect(taskey({ action: 'stash', data: { name: 'same' } }).json.ok).toBe(true);
+    okTask({ action: 'create', data: { title: 'B' } });
+    expect(taskey({ action: 'stash', data: { name: 'same' } }).json.error.code).toBe('STASH_ALREADY_EXISTS');
+    expect(taskey({ action: 'unstash', data: { name: 'same' } }).json.error.code).toBe('ACTIVE_TASKS_EXIST');
+    expect(taskey({ action: 'delete-all', data: { confirm: true } }).json).toEqual({ ok: true, deleted: 1 });
+
+    const firstRepo = repoKey;
+    repoKey = `${firstRepo}-other`;
+    okTask({ action: 'create', data: { title: 'Other' } });
+    expect(taskey({ action: 'stash', data: { name: 'same' } }).json.ok).toBe(true);
+    expect(taskey({ action: 'stashes' }).json).toEqual({ ok: true, stashes: [{ name: 'same', taskCount: 1 }] });
+
+    repoKey = firstRepo;
+    expect(taskey({ action: 'stashes' }).json).toEqual({ ok: true, stashes: [{ name: 'same', taskCount: 1 }] });
+  });
+
+  test('rejects stash selectors for next and list-doable', () => {
+    expect(taskey({ action: 'next', data: { stash: 'sprint 1' } }).json.error.code).toBe('INVALID_INPUT');
+    expect(taskey({ action: 'list-doable', data: { stash: 'sprint 1' } }).json.error.code).toBe('INVALID_INPUT');
+  });
 });

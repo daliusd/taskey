@@ -10,7 +10,12 @@ export type ErrorCode =
   | 'TASK_NOT_FOUND'
   | 'TASK_HAS_DEPENDENTS'
   | 'DEPENDENCY_CYCLE'
-  | 'CONFIRMATION_REQUIRED';
+  | 'CONFIRMATION_REQUIRED'
+  | 'INVALID_STASH_NAME'
+  | 'STASH_NOT_FOUND'
+  | 'STASH_ALREADY_EXISTS'
+  | 'NO_ACTIVE_TASKS'
+  | 'ACTIVE_TASKS_EXIST';
 
 export class TaskeyError extends Error {
   constructor(
