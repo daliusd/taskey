@@ -166,14 +166,18 @@ describe('task operations', () => {
       ok: true,
       stashes: [{ name: 'sprint 1', taskCount: 2 }]
     });
-    expect(taskey({ action: 'list', data: { stash: 'sprint 1' }, fields: ['title', 'completed', 'prerequisites'] }).json).toEqual({
+    expect(
+      taskey({ action: 'list', data: { stash: 'sprint 1' }, fields: ['title', 'completed', 'prerequisites'] }).json
+    ).toEqual({
       ok: true,
       tasks: [
         { id: a.id, title: 'A', prerequisites: [], completed: true },
         { id: b.id, title: 'B', prerequisites: [a.id], completed: false }
       ]
     });
-    expect(taskey({ action: 'get', data: { id: b.id, stash: 'sprint 1' }, fields: ['title', 'prerequisites'] }).json).toEqual({
+    expect(
+      taskey({ action: 'get', data: { id: b.id, stash: 'sprint 1' }, fields: ['title', 'prerequisites'] }).json
+    ).toEqual({
       ok: true,
       task: { id: b.id, title: 'B', prerequisites: [a.id] }
     });

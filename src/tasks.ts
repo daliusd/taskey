@@ -180,9 +180,7 @@ export class TaskService {
 
     this.db.transaction(() => {
       this.db.prepare('UPDATE tasks SET repo_key = ? WHERE repo_key = ?').run(targetRepoKey, this.repoKey);
-      this.db
-        .prepare('UPDATE task_prerequisites SET repo_key = ? WHERE repo_key = ?')
-        .run(targetRepoKey, this.repoKey);
+      this.db.prepare('UPDATE task_prerequisites SET repo_key = ? WHERE repo_key = ?').run(targetRepoKey, this.repoKey);
     })();
 
     return { name, taskCount };
@@ -200,9 +198,7 @@ export class TaskService {
 
     this.db.transaction(() => {
       this.db.prepare('UPDATE tasks SET repo_key = ? WHERE repo_key = ?').run(this.repoKey, sourceRepoKey);
-      this.db
-        .prepare('UPDATE task_prerequisites SET repo_key = ? WHERE repo_key = ?')
-        .run(this.repoKey, sourceRepoKey);
+      this.db.prepare('UPDATE task_prerequisites SET repo_key = ? WHERE repo_key = ?').run(this.repoKey, sourceRepoKey);
     })();
 
     return { name, taskCount };

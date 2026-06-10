@@ -119,7 +119,16 @@ function executeRequest(service: TaskService, request: RequestEnvelope): Record<
     throw new TaskeyError('UNKNOWN_ACTION', `Unknown action: ${request.action}`);
   }
 
-  const taskReturningActions = new Set(['create', 'get', 'list', 'list-doable', 'next', 'update', 'complete', 'reopen']);
+  const taskReturningActions = new Set([
+    'create',
+    'get',
+    'list',
+    'list-doable',
+    'next',
+    'update',
+    'complete',
+    'reopen'
+  ]);
   if (!taskReturningActions.has(request.action) && request.fields !== undefined) {
     throw new TaskeyError('INVALID_INPUT', `fields is not allowed on ${request.action}.`);
   }
