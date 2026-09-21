@@ -1,7 +1,7 @@
 ---
 name: taskey
 description: >-
-  Use this skill whenever the user wants repository development work managed as persistent tasks: “break this work into tasks”, “make a plan/backlog/checklist”, “create handoff tasks for another coding agent”, “continue the next dev task”, “what’s the next unblocked task?”, “update/complete/reopen a task”, or “clear all tasks / start from scratch”. Use it even if the user does not mention taskey and even if implementation skills are also relevant, because the immediate job is task management. This skill uses the taskey JSON CLI to create, list, continue, update, complete, and delete repo-scoped dev tasks, with each task written so another developer or AI agent can implement it later without hidden chat context.
+  Use this skill whenever the user wants repository development work managed as persistent tasks: “break this work into tasks”, “make a plan/backlog/checklist”, “create handoff tasks for another coding agent”, “continue the next dev task”, “what’s the next unblocked task?”, “update/complete/reopen a task”, or “clear all tasks / start from scratch”. Use it even if the user does not mention taskey and even if implementation skills are also relevant, because the immediate job is task management. This skill uses the taskey JSON CLI to create, list, continue, update, complete, and delete repo-scoped dev tasks. Task descriptions capture what outcome is required, not how to implement it.
 ---
 
 # Taskey Dev Task Management
@@ -49,7 +49,7 @@ Always parse the JSON response. Successful responses have `"ok": true`; failures
 Useful actions:
 
 ```json
-{"action":"create","data":{"title":"...","description":"## Context\n...\n\n## Objective\n...\n\n## Details\n- ...\n\n## Acceptance criteria\n- ...\n\n## Validation\n- ...","prerequisites":[]}}
+{"action":"create","data":{"title":"...","description":"## Outcome\n...\n\n## Requirements\n- ...\n\n## Acceptance criteria\n- ...","prerequisites":[]}}
 {"action":"list"}
 {"action":"list-doable"}
 {"action":"next"}
@@ -92,115 +92,94 @@ If the user asks for a one-off explanation or tiny edit that clearly does not ne
 
 ## Task quality standard
 
-Every task you create or update should be self-contained. Assume a different developer or AI agent may see only the task record, not the conversation that created it.
+Every task you create or update should be self-contained about the required result. Assume a different developer or AI agent may see only the task record, not the conversation that created it.
 
-A good task description includes:
+Task records define **what must be true when the work is complete**, while leaving the implementer free to decide how to achieve it. Include:
 
-1. **Context** — what repo area, feature, bug, or user goal this belongs to.
-2. **Concrete objective** — exactly what must be changed or produced.
-3. **Relevant files/modules** — paths, commands, APIs, schemas, tests, or docs already known.
-4. **Implementation guidance** — important design decisions, constraints, edge cases, and non-goals.
-5. **Acceptance criteria** — how to tell the task is done.
-6. **Validation commands** — tests, typecheck, lint, build, manual checks, or expected JSON examples.
-7. **Prerequisites** — task IDs that must be completed before this task can be done.
+1. **Outcome** — the concrete result or changed behavior.
+2. **Requirements** — user-visible behavior, required capabilities, compatibility expectations, explicit constraints, edge cases, and non-goals.
+3. **Acceptance criteria** — observable conditions that establish completion.
+4. **Prerequisites** — task IDs whose outcomes are required first.
 
-Prefer a concise but complete markdown description. Do not create vague tasks like "fix tests" or "implement API" unless the description fully explains what that means.
+Do not put implementation instructions in a task. In particular, do not prescribe:
+
+- implementation steps or sequencing within the task;
+- files, modules, functions, classes, or internal APIs to edit;
+- architecture, algorithms, libraries, data structures, or design patterns;
+- test strategy, test-file placement, validation commands, or manual verification procedure.
+
+A detail remains appropriate when the user explicitly requires that detail as part of the result rather than as a suggested means of achieving it. Preserve externally observable contracts and user-stated constraints, but do not turn repository observations into implementation directions.
+
+Prefer concise, outcome-focused descriptions. Do not create vague tasks such as "fix tests" or "implement API"; make the required behavior and completion conditions specific without explaining how to produce them.
 
 ## Recommended task description template
 
-Use this structure when creating substantial dev tasks. Copy these headings literally into the stored Taskey `description`:
+Use this structure for substantial tasks:
 
 ```markdown
-## Context
-[Why this task exists and what part of the project it affects.]
+## Outcome
+[The specific result that must exist.]
 
-## Objective
-[Specific implementation outcome.]
-
-## Details
-- [Relevant files, functions, commands, data shapes, decisions, constraints.]
-- [Edge cases and non-goals.]
+## Requirements
+- [Required behavior, constraint, edge case, or non-goal.]
 
 ## Acceptance criteria
-- [Observable result 1]
-- [Observable result 2]
-
-## Validation
-- [Command or manual check]
+- [Observable completion condition 1.]
+- [Observable completion condition 2.]
 ```
 
-For very small tasks, a shorter description is fine, but it still needs enough detail to be implemented independently. For planning evals like this skill's own tests, use the full template exactly so acceptance criteria and validation are unquestionably present in stored Taskey tasks.
+For very small tasks, a shorter outcome statement is fine if completion is still unambiguous.
 
-Bad stored description example:
+Bad stored description example (too vague):
 - "Implement export command"
+
+Bad stored description example (prescribes how):
+- "Add `src/export.ts`, use Zod for serialization, and run `npm test`."
 
 Good stored description example:
 ```markdown
-## Context
-The minimal eval repo has `src/cli.ts` with `list` only and a README that hints at future `export` support.
+## Outcome
+The CLI can export its current task list as JSON.
 
-## Objective
-Add automated tests that define the expected `export` command behavior before implementation.
-
-## Details
-- Add tests in `src/cli.test.ts` or the repo's current CLI test file.
-- Cover the `export` happy path and unknown-command regression behavior.
-- Keep the contract aligned with the agreed JSON output shape.
+## Requirements
+- Exported data includes each task's title, description, completion state, and prerequisites.
+- An empty task list produces a valid empty JSON collection.
+- Existing commands retain their current behavior.
 
 ## Acceptance criteria
-- A failing test exists for the missing `export` behavior before implementation.
-- Existing `list` and unknown-command behavior stay covered.
-
-## Validation
-- npm test
+- A user can request an export and receive valid JSON representing all current tasks.
+- Export output handles both populated and empty task lists.
 ```
 
-For CLI feature planning like "add an export command", a good task set usually looks like:
-- contract/spec task
-- tests-first task
-- implementation task
-- docs/verification task
-
-Each of those substantial tasks should still contain explicit `## Acceptance criteria` and `## Validation` sections in the stored Taskey description.
+Split work into multiple tasks only when each task delivers an independently required result. Do not manufacture method- or phase-oriented tasks such as "define the contract," "design the solution," "write tests," and "implement the code" unless the user explicitly requested those artifacts as separate outcomes. Planning, research, implementation, and validation are normally activities within delivery of an outcome, not task outcomes themselves.
 
 ## Planning workflow
 
 When asked to plan development work:
 
-1. Inspect the repository enough to understand existing structure and constraints.
-2. Break the work into small, implementable tasks.
-3. For each task, write a self-contained markdown description using the markdown template below. Do not omit the `Acceptance criteria` or `Validation` sections for substantial tasks. These sections must be stored inside Taskey, not only mentioned in your chat summary.
-4. Treat `description` as mandatory for task creation in this skill, even though the CLI itself allows omitting it.
-5. Prefer to write the full markdown description text first, then pass that exact text to `taskey create`, instead of improvising a shorter summary in the command.
-6. Identify prerequisites between tasks.
-7. Create prerequisite tasks first so their IDs are available.
-8. Create dependent tasks with `prerequisites` set to the prerequisite task IDs.
-9. After creating tasks, use `get` on them if needed and verify the stored description really contains `## Acceptance criteria` and `## Validation` (or an equivalent clearly labeled acceptance/validation section). If those sections are missing, immediately fix the task with `update`.
-10. Double-check that the stored task descriptions are implementation-ready, not just titles. If a created task is too vague, immediately fix it with `update`.
-11. For feature-planning tasks, assume the grader may inspect the stored Taskey descriptions directly. If a stored task would fail a checklist for explicit acceptance criteria or validation commands, fix it before you answer the user.
-12. Before responding, prefer to inspect created tasks with `get` or rely on the exact descriptions you just wrote so your summary reflects the real stored handoff details, not only the titles.
-13. Return a short summary of created tasks with IDs and dependency order.
+1. Inspect the repository only enough to understand the requested outcomes, existing behavior, and genuine constraints.
+2. Break the work into the fewest small tasks needed to represent independently required results and genuine outcome dependencies. Avoid decomposing work by implementation phase, technique, or engineering activity.
+3. Write each description in terms of outcome, requirements, and observable acceptance criteria. Treat `description` as mandatory even though the CLI allows omitting it.
+4. Remove proposed implementation choices from the description. Repository paths and internals discovered during inspection inform your planning but do not belong in the task unless they are explicit scope requirements from the user.
+5. Identify outcome dependencies between tasks.
+6. Create prerequisite tasks first so their IDs are available, then create dependent tasks with `prerequisites` set to those IDs.
+7. Inspect created tasks when needed and immediately update any description that is vague or contains instructions about how to implement or validate the work.
+8. Return a short summary of created tasks with IDs, required outcomes, acceptance criteria, and dependency order. Do not add implementation advice to the summary.
 
 Example:
 
 ```sh
-taskey json '{"action":"create","data":{"title":"Add storage tests","description":"## Context\nTaskey needs SQLite storage validation.\n\n## Objective\nAdd tests for database path override and schema initialization.\n\n## Details\n- Cover schema creation on first open.\n- Verify the override path is respected in tests.\n- Keep tests isolated with a temporary database file.\n\n## Acceptance criteria\n- Tests use a temporary database path.\n- Tests verify schema_version, tasks, and task_prerequisites tables exist.\n\n## Validation\n- npm test -- tests/paths.test.ts","prerequisites":[]}}'
+taskey json '{"action":"create","data":{"title":"Support JSON task export","description":"## Outcome\nThe CLI can export the current task list as JSON.\n\n## Requirements\n- Include task descriptions, completion state, and prerequisites.\n- Return a valid empty collection when no tasks exist.\n- Preserve existing command behavior.\n\n## Acceptance criteria\n- Export output is valid JSON representing every current task.\n- Populated and empty task lists are both supported.","prerequisites":[]}}'
 ```
 
-Then create dependent tasks using the returned `id`.
+Before creating or updating a task, check:
+- Does it state a concrete required outcome?
+- Are requirements expressed as behavior or constraints rather than implementation choices?
+- Are acceptance criteria observable and solution-independent?
+- Is all guidance about files, internals, tools, steps, and validation methods removed?
+- Are prerequisites represented by task IDs rather than prose instructions?
 
-Before creating a task, sanity-check the description against this checklist:
-- Does it name relevant files/modules?
-- Does it include concrete implementation guidance?
-- Does it include at least one acceptance criterion?
-- Does it include at least one validation command or manual verification step?
-If any answer is no, improve the description before calling `create`.
-
-When you summarize planned work, do not only list titles. For each created task, include a compact handoff summary covering: objective, key implementation details/files, acceptance criteria, validation command(s), and prerequisites. The user should be able to tell from your response that the stored task itself is self-contained.
-
-If your draft response only has task titles plus a dependency chain, expand it before sending.
-
-If your stored Taskey tasks read like plain paragraphs without clearly labeled `## Acceptance criteria` and `## Validation` sections, they are not done yet.
+If any answer is no, revise the description before storing it.
 
 ## Execution workflow
 
@@ -209,9 +188,9 @@ When asked to continue or implement work from the task list:
 1. Run `taskey json '{"action":"next"}'`.
 2. If `next` returns no task, run `taskey json '{"action":"list-doable"}'` as a second check before concluding nothing is available.
 3. If no task is available from either command, stop there and tell the user there are no unblocked incomplete tasks. Do not infer a "next task" from the repository contents, README, TODO comments, or your own judgment. Do not implement anything in this branch, do not create a replacement task on your own, and do not suggest concrete implementation follow-up unless the user asks what to plan next.
-4. If a task is returned, explicitly anchor your work to that task: mention the chosen task ID/title in your response, then read it carefully; if details are insufficient, update the task with a better description before implementing.
-5. Implement only the task that Taskey returned, using normal development practices and any relevant project skills. Do not create a different "obvious" task and complete that instead.
-6. Run the validation commands from the task description, plus any obvious project-level checks.
+4. If a task is returned, explicitly anchor your work to that task: mention the chosen task ID/title in your response, then read it carefully. If the required outcome is ambiguous, clarify it with the user or update the task with outcome-focused detail; do not add implementation instructions.
+5. Implement only the task that Taskey returned, using normal development practices and any relevant project skills. The implementer chooses the approach after selecting the task; do not create a different "obvious" task and complete that instead.
+6. Determine and run appropriate validation from the repository and the task's acceptance criteria. Validation belongs to execution, not to the stored task description.
 7. Mark the task complete only after validation passes or the user explicitly accepts the result:
 
 ```sh
@@ -222,7 +201,7 @@ If implementation reveals new work, create new taskey tasks rather than burying 
 
 ## Updating tasks
 
-Update a task when you learn important new details, change scope, discover better validation, or need to correct prerequisites:
+Update a task when the required outcome or constraints change, acceptance criteria become clearer, or prerequisites need correction. Do not add implementation discoveries or validation procedures to the task:
 
 ```sh
 taskey json '{"action":"update","data":{"id":"tsk_...","description":"...updated self-contained markdown..."}}'
@@ -261,11 +240,12 @@ For destructive actions like `delete-all`, explicitly say that you ran `taskey j
 
 For planning/create flows, prefer a response shape like:
 - `tsk_...` — title
-  - Objective: ...
-  - Details: ...
+  - Outcome: ...
+  - Requirements: ...
   - Acceptance: ...
-  - Validation: ...
   - Prerequisites: none / `tsk_...`
+
+Keep this summary outcome-focused too. Do not append suggestions about files, architecture, implementation steps, or validation commands.
 
 For execution/continue flows, prefer a response shape like:
 - Selected next Taskey task: `tsk_...` — title
